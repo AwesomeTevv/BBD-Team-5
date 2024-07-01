@@ -21,9 +21,17 @@ io.on("connection", (socket) => {
       room.players.push({ id: socket.id, name });
       socket.join(roomCode);
       socket.to(roomCode).emit("playerJoined", { name });
-      socket.emit("joinedRoom", { roomCode, players: room.players });
+      io.to(room.host).emit("updatePlayerList", room.players);
+      socket.emit("joinedRoom", { roomCode, isHost: false });
     } else {
       socket.emit("error", "Room not found");
+    }
+  });
+
+  socket.on("startGame", (roomCode) => {
+    const room = rooms.get(roomCode);
+    if (room && room.host === socket.id) {
+      io.to(roomCode).emit("gameStarted");
     }
   });
 
@@ -34,6 +42,7 @@ io.on("connection", (socket) => {
         const player = room.players[playerIndex];
         room.players.splice(playerIndex, 1);
         socket.to(roomCode).emit("playerLeft", { name: player.name });
+        io.to(room.host).emit("updatePlayerList", room.players);
       }
     });
   });
