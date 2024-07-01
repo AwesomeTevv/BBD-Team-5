@@ -1,0 +1,23 @@
+{
+  "name": "tilt-ball",
+  "version": "1.0.0",
+  "description": "Ball Tilt Game.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AwesomeTevv/BBD-Team-5.git"
+  },
+  "author": "Team 5",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AwesomeTevv/BBD-Team-5/issues"
+  },
+  "homepage": "https://github.com/AwesomeTevv/BBD-Team-5#readme",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
