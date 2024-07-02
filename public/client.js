@@ -94,3 +94,82 @@ function updatePlayerList(players) {
     playerList.appendChild(li);
   });
 }
+
+// Add these variables at the top of your client.js file
+let gyroscopeInterval = null;
+const gyroscopeData = { alpha: 0, beta: 0, gamma: 0 };
+
+// Add this function to handle gyroscope data
+function handleOrientation(event) {
+  gyroscopeData.alpha = event.alpha; // Z-axis rotation
+  gyroscopeData.beta = event.beta; // X-axis rotation
+  gyroscopeData.gamma = event.gamma; // Y-axis rotation
+}
+
+// Modify the existing socket.on('gameStarted') handler
+socket.on("gameStarted", () => {
+  lobby.style.display = "none";
+  game.style.display = "block";
+
+  if (!isHost) {
+    // Request permission to use the gyroscope on mobile devices
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function"
+    ) {
+      DeviceOrientationEvent.requestPermission()
+        .then((permissionState) => {
+          if (permissionState === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+            startSendingGyroscopeData();
+          }
+        })
+        .catch(console.error);
+    } else {
+      // For devices that don't require permission
+      window.addEventListener("deviceorientation", handleOrientation);
+      startSendingGyroscopeData();
+    }
+  }
+});
+
+// Add this function to start sending gyroscope data
+function startSendingGyroscopeData() {
+  gyroscopeInterval = setInterval(() => {
+    socket.emit("gyroscopeData", {
+      roomCode: currentRoom,
+      data: gyroscopeData,
+    });
+  }, 100); // Send data every 100ms
+}
+
+// Add this to clean up when the game ends or the user disconnects
+function stopSendingGyroscopeData() {
+  if (gyroscopeInterval) {
+    clearInterval(gyroscopeInterval);
+    gyroscopeInterval = null;
+  }
+  window.removeEventListener("deviceorientation", handleOrientation);
+}
+
+// Add a handler for gyroscope data on the host side
+if (isHost) {
+  socket.on("gyroscopeUpdate", ({ playerId, data }) => {
+    updateGyroscopeDisplay(playerId, data);
+  });
+}
+
+// Function to update the gyroscope display on the host screen
+function updateGyroscopeDisplay(playerId, data) {
+  const playerElement = document.getElementById(`player-${playerId}`);
+  if (!playerElement) {
+    const newPlayerElement = document.createElement("div");
+    newPlayerElement.id = `player-${playerId}`;
+    document.getElementById("gyroscope-data").appendChild(newPlayerElement);
+  }
+  document.getElementById(
+    `player-${playerId}`
+  ).textContent = `Player ${playerId}: Alpha: ${data.alpha.toFixed(
+    2
+  )}, Beta: ${data.beta.toFixed(2)}, Gamma: ${data.gamma.toFixed(2)}`;
+}
